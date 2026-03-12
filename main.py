@@ -1,4 +1,6 @@
 import asyncio
+from nlp_processor import process_nlp
+
 # 동일한 폴더에 있는 scraper.py 파일에서 수집 실행 함수를 가져옵니다.
 from scraper import run_collectors
 
@@ -41,9 +43,23 @@ def main():
         print("-" * 50)
         
         # =================================================================
-        # TODO: 3번(NLP 텍스트 정제) 및 4번(통계 분석/시각화) 모듈 호출 영역
-        # 예: cleaned_words = process_nlp(raw_data)
-        #     show_statistics(cleaned_words)
+        print("\n[선택] 분석 결과에서 제외하고 싶은 단어가 있다면 입력해 주세요.")
+        print("💡 팁: 검색어 자체나 너무 뻔한 단어를 제외하면 숨겨진 트렌드가 잘 보입니다.")
+        print("(예: 해킹, 피싱, 뉴스 / 뺄 단어가 없다면 그냥 엔터를 누르세요)")
+        
+        stopword_input = input("▶ 제외할 단어: ").strip()
+        
+        custom_stopwords = []
+        if stopword_input:
+            # 쉼표(,)나 띄어쓰기를 기준으로 단어를 쪼개서 리스트로 만듭니다.
+            import re
+            custom_stopwords = [word.strip() for word in re.split(r'[,\s]+', stopword_input) if word.strip()]
+            print(f"[*] 적용된 제외 단어 필터: {custom_stopwords}")
+        
+        # 4. NLP 모듈 호출 (앞서 만든 nlp_processor.py 연동)
+        extracted_nouns = process_nlp(raw_data, custom_stopwords)
+        
+        print(f"\n✔ 텍스트 정제 완료! (총 {len(extracted_nouns)}개의 유의미한 단어 추출)")        
         # =================================================================
         
     except Exception as e:
