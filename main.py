@@ -4,6 +4,9 @@ from nlp_processor import process_nlp
 # 동일한 폴더에 있는 scraper.py 파일에서 수집 실행 함수를 가져옵니다.
 from scraper import run_collectors
 
+from analytics import analyze_and_print
+
+
 def main():
     print("=" * 50)
     print("  SNS/커뮤니티 실시간 키워드 트렌드 분석기")
@@ -56,9 +59,12 @@ def main():
             custom_stopwords = [word.strip() for word in re.split(r'[,\s]+', stopword_input) if word.strip()]
             print(f"[*] 적용된 제외 단어 필터: {custom_stopwords}")
         
-        # 4. NLP 모듈 호출 (앞서 만든 nlp_processor.py 연동)
+        # 4. NLP 정제 모듈 가동
         extracted_nouns = process_nlp(raw_data, custom_stopwords)
         
+        # 5. [추가된 부분] 통계 분석 및 최종 리포트 출력 모듈 가동
+        # top_n 변수를 조절하면 10위, 20위 등 원하는 만큼 순위를 볼 수 있습니다.
+        analyze_and_print(raw_data, extracted_nouns, top_n=15)
         print(f"\n✔ 텍스트 정제 완료! (총 {len(extracted_nouns)}개의 유의미한 단어 추출)")        
         # =================================================================
         
