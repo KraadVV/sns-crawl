@@ -10,10 +10,12 @@ class DCinsideScraper:
         self.keyword = keyword
         # 봇 탐지 우회를 위한 User-Agent 위장
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.dcinside.com/'
         }
         # 디시인사이드 통합검색 URL (검색어 인코딩 적용)
-        self.base_url = f"https://search.dcinside.com/post/q/{urllib.parse.quote(keyword)}"
+        self.base_url = f"https://search.dcinside.com/post/sort/latest/q/{urllib.parse.quote(keyword)}"
+
 
     async def fetch(self, session):
         print(f"[DCinside] '{self.keyword}' 검색 시작...")
@@ -23,22 +25,30 @@ class DCinsideScraper:
 
         try:
             # 비동기 HTTP GET 요청
-            async with session.get(self.base_url, headers=self.headers, timeout=10) as response:
+            async with session.get(self.base_url, headers=self.headers, timeout=30) as response:
                 if response.status == 200:
-                    html = await response.text()
+                    html = await response.text(errors='replace')
                     soup = BeautifulSoup(html, 'html.parser')
                     
                     # HTML 파싱 (아래 선택자는 가상의 구조이며, 실제 사이트 구조 변동 시 수정 필요)
                     posts = soup.select('ul.sch_result_list > li')
+
                     for post in posts:
                         title_el = post.select_one('a.tit_txt')
-                        date_el = post.select_one('span.date_time')
+                        date_el = post.select_one('.date_time')
                         
                         if title_el and date_el:
                             title = title_el.text.strip()
+                            date_str = date_el.text.strip()
                             try:
                                 # 문자열을 datetime 객체로 변환하여 24시간 이내인지 검증
-                                post_time = datetime.strptime(date_el.text.strip(), '%Y-%m-%d %H:%M:%S')
+                                # 날짜 형식이 '.'으로 구분되는 경우 등을 대비해 표준화
+                                date_clean = date_str.replace('.', '-')
+                                if len(date_clean) > 16:
+                                    post_time = datetime.strptime(date_clean, '%Y-%m-%d %H:%M:%S')
+                                else:
+                                    post_time = datetime.strptime(date_clean, '%Y-%m-%d %H:%M')
+                                
                                 if post_time >= time_limit:
                                     results.append({
                                         'platform': 'DCinside',
@@ -73,7 +83,7 @@ class NaverAPIScraper:
         time_limit = datetime.now() - timedelta(hours=24)
 
         try:
-            async with session.get(self.url, headers=headers, timeout=10) as response:
+            async with session.get(self.url, headers=headers, timeout=30) as response:
                 if response.status == 200:
                     data = await response.json() # JSON 응답 파싱
                     items = data.get('items', [])
@@ -106,7 +116,9 @@ async def run_collectors(keyword, naver_id, naver_secret):
     print(f"\n=== '{keyword}' 관련 24시간 내 데이터 수집 프로세스 가동 ===")
     
     # 단일 aiohttp 세션을 생성하여 여러 스크래퍼가 자원을 효율적으로 공유하게 함
-    async with aiohttp.ClientSession() as session:
+    # SSL 검증 비활성화 (일부 환경에서의 연결 문제 방지)
+    connector = aiohttp.TCPConnector(ssl=False)
+    async with aiohttp.ClientSession(connector=connector) as session:
         dc_scraper = DCinsideScraper(keyword)
         naver_scraper = NaverAPIScraper(keyword, naver_id, naver_secret)
         
