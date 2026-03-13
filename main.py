@@ -1,16 +1,23 @@
 import asyncio
+import os
+from dotenv import load_dotenv
 from nlp_processor import process_nlp
 
 # 동일한 폴더에 있는 scraper.py 파일에서 수집 실행 함수를 가져옵니다.
 from scraper import run_collectors
 
-from analytics import analyze_and_print
+# [FIX] The file provided is named 'analystics.py'. 
+# It is highly recommended to rename the file to 'analytics.py', but adjusting import here to match current state.
+from analystics import analyze_and_print
 
 
 def main():
     print("=" * 50)
     print("  SNS/커뮤니티 실시간 키워드 트렌드 분석기")
     print("=" * 50)
+
+    # .env 파일에서 환경 변수 불러오기
+    load_dotenv()
     
     # 1. 사용자 입력 받기
     keyword = input("\n분석할 키워드를 입력하세요: ").strip()
@@ -19,11 +26,14 @@ def main():
         print("키워드가 입력되지 않았습니다. 프로그램을 종료합니다.")
         return
 
-    # [주의] 실제 사용 시에는 소스 코드에 직접 키를 넣기보다, 
-    # .env 파일이나 config.json 같은 별도의 설정 파일로 분리하는 것이 안전합니다.
-    NAVER_CLIENT_ID = "YlLT2bOR4jH1nhxGwdU0e"         
-    NAVER_CLIENT_SECRET = "u2r82Yh4j8" 
+    # [보안 개선] 환경 변수에서 키를 가져오도록 변경했습니다.
+    # 실행 전: export NAVER_CLIENT_ID="your_id" && export NAVER_CLIENT_SECRET="your_secret"
+    NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
+    NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
     
+    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
+        print("\n[!] 경고: 네이버 API Key가 환경변수에 설정되지 않았습니다. (스크래퍼가 제대로 동작하지 않을 수 있습니다)")
+
     print(f"\n▶ '{keyword}' 관련 최근 24시간 데이터를 수집합니다. 잠시만 기다려주세요...")
     
     # 2. 비동기 수집 모듈(scraper.py) 가동

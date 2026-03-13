@@ -1,3 +1,5 @@
-.venv/
+# Security: Ignore environment variables file
+.env
+
+# Python compiled files
 __pycache__/
-*.pyc
