@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 from dotenv import load_dotenv
 from nlp_processor import process_nlp
 
@@ -65,7 +66,6 @@ def main():
         custom_stopwords = []
         if stopword_input:
             # 쉼표(,)나 띄어쓰기를 기준으로 단어를 쪼개서 리스트로 만듭니다.
-            import re
             custom_stopwords = [word.strip() for word in re.split(r'[,\s]+', stopword_input) if word.strip()]
             print(f"[*] 적용된 제외 단어 필터: {custom_stopwords}")
         

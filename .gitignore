@@ -1,5 +1,5 @@
 # Security: Ignore environment variables file
 .env
-
+.venv
 # Python compiled files
 __pycache__/
